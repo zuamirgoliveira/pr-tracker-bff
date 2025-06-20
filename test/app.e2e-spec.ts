@@ -1,25 +1,49 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { of } from 'rxjs';
 import * as request from 'supertest';
-import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+describe('UserController (e2e)', () => {
+  let app: INestApplication;
 
-  beforeEach(async () => {
+  const fakeUser = {
+    login: 'testuser',
+    name: 'Test User',
+    avatarUrl: 'http://example.com/avatar.png',
+    email: 'testuser@example.com',
+  };
+
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(HttpService)
+      .useValue({
+        get: jest.fn().mockReturnValue(of({ data: fakeUser })),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('GET /user → 200 e payload do usuário', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/user')
+      .set('Authorization', 'Bearer faketoken')
       .expect(200)
-      .expect('Hello World!');
+      .expect(fakeUser);
+  });
+
+  it('GET /user sem Authorization → 400', () => {
+    return request(app.getHttpServer())
+      .get('/user')
+      .expect(400);
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 });
