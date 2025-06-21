@@ -9,7 +9,7 @@ import { UserService } from './user.service';
     ConfigModule,
     HttpModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => ({
+      useFactory: (config: ConfigService) => ({
         baseURL: config.get<string>('BACKEND_URL'),
         timeout: 5_000,
       }),

@@ -3,6 +3,7 @@ import { INestApplication, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 import * as request from 'supertest';
+import { Server } from 'http';
 import { AppModule } from './../src/app.module';
 import { RepoDto } from '../src/repository/dto/repo.dto';
 
@@ -39,7 +40,7 @@ describe('E2E: User & Repos Controllers', () => {
     },
   ];
 
-  const fakeReposResponse = fakeRepos.map(r => ({
+  const fakeReposResponse = fakeRepos.map((r) => ({
     ...r,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
@@ -51,7 +52,7 @@ describe('E2E: User & Repos Controllers', () => {
     })
       .overrideProvider(HttpService)
       .useValue({
-        get: jest.fn().mockImplementation((url: string, options: any) => {
+        get: jest.fn().mockImplementation((url: string) => {
           if (url === '/api/v1/user') {
             return of({ data: fakeUser });
           }
@@ -69,7 +70,7 @@ describe('E2E: User & Repos Controllers', () => {
   });
 
   it('GET /user → 200 e payload do usuário', () => {
-    return request(app.getHttpServer())
+    return request(app.getHttpServer() as unknown as Server)
       .get('/user')
       .set('Authorization', 'Bearer faketoken')
       .expect(HttpStatus.OK)
@@ -77,13 +78,13 @@ describe('E2E: User & Repos Controllers', () => {
   });
 
   it('GET /user sem Authorization → 400', () => {
-    return request(app.getHttpServer())
+    return request(app.getHttpServer() as unknown as Server)
       .get('/user')
       .expect(HttpStatus.BAD_REQUEST);
   });
 
   it('GET /user/repos → 200 e lista de repositórios', () => {
-    return request(app.getHttpServer())
+    return request(app.getHttpServer() as unknown as Server)
       .get('/user/repos')
       .set('Authorization', 'Bearer faketoken')
       .expect(HttpStatus.OK)
@@ -91,7 +92,7 @@ describe('E2E: User & Repos Controllers', () => {
   });
 
   it('GET /user/repos sem Authorization → 400', () => {
-    return request(app.getHttpServer())
+    return request(app.getHttpServer() as unknown as Server)
       .get('/user/repos')
       .expect(HttpStatus.BAD_REQUEST);
   });

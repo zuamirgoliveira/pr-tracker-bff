@@ -1,10 +1,16 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { RepositoryService } from './repository.service';
 import { HttpService } from '@nestjs/axios';
 import { of, throwError } from 'rxjs';
 import { RepoDto } from './dto/repo.dto';
-import { RepoFilterDto, RepoType, SortField, Direction } from './dto/repo-filter.dto';
-import { HttpException } from '@nestjs/common';
+import {
+  RepoFilterDto,
+  RepoType,
+  SortField,
+  Direction,
+} from './dto/repo-filter.dto';
+import { AxiosResponse } from 'axios';
 
 describe('RepositoryService', () => {
   let service: RepositoryService;
@@ -33,7 +39,7 @@ describe('RepositoryService', () => {
     },
   ];
 
-  const defaultFilter = new RepoFilterDto(); // defaults: all, created, desc, 30, 1
+  const defaultFilter = new RepoFilterDto();
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -55,31 +61,30 @@ describe('RepositoryService', () => {
   });
 
   it('should throw 400 BadRequest if authHeader is missing', async () => {
-    await expect(service.getUserRepos('', defaultFilter))
-      .rejects.toMatchObject({ status: 400 });
+    await expect(service.getUserRepos('', defaultFilter)).rejects.toMatchObject(
+      { status: 400 },
+    );
   });
 
   it('should call HttpService.get with correct URL, headers and params and return data', async () => {
     // arrange
-    jest.spyOn(httpService, 'get').mockReturnValue(of({ data: fakeRepos } as any));
+    const axiosResponse = { data: fakeRepos } as AxiosResponse<RepoDto[]>;
+    jest.spyOn(httpService, 'get').mockReturnValue(of(axiosResponse));
 
     // act
     const result = await service.getUserRepos('Bearer token123', defaultFilter);
 
     // assert
-    expect(httpService.get).toHaveBeenCalledWith(
-      '/api/v1/user/repos',
-      {
-        headers: { Authorization: 'Bearer token123' },
-        params: {
-          type: defaultFilter.type,
-          sort: defaultFilter.sort,
-          direction: defaultFilter.direction,
-          perPage: defaultFilter.perPage,
-          page: defaultFilter.page,
-        },
+    expect(httpService.get).toHaveBeenCalledWith('/api/v1/user/repos', {
+      headers: { Authorization: 'Bearer token123' },
+      params: {
+        type: defaultFilter.type,
+        sort: defaultFilter.sort,
+        direction: defaultFilter.direction,
+        perPage: defaultFilter.perPage,
+        page: defaultFilter.page,
       },
-    );
+    });
     expect(result).toEqual(fakeRepos);
   });
 
@@ -91,30 +96,31 @@ describe('RepositoryService', () => {
       perPage: 10,
       page: 2,
     };
-    jest.spyOn(httpService, 'get').mockReturnValue(of({ data: fakeRepos } as any));
+    const axiosResponse = { data: fakeRepos } as AxiosResponse<RepoDto[]>;
+    jest.spyOn(httpService, 'get').mockReturnValue(of(axiosResponse));
 
     const result = await service.getUserRepos('Bearer tok', customFilter);
 
-    expect(httpService.get).toHaveBeenCalledWith(
-      '/api/v1/user/repos',
-      {
-        headers: { Authorization: 'Bearer tok' },
-        params: {
-          type: 'owner',
-          sort: 'updated',
-          direction: 'asc',
-          perPage: 10,
-          page: 2,
-        },
+    expect(httpService.get).toHaveBeenCalledWith('/api/v1/user/repos', {
+      headers: { Authorization: 'Bearer tok' },
+      params: {
+        type: 'owner',
+        sort: 'updated',
+        direction: 'asc',
+        perPage: 10,
+        page: 2,
       },
-    );
+    });
     expect(result).toEqual(fakeRepos);
   });
 
   it('should throw 502 BadGateway if downstream call errors', async () => {
-    jest.spyOn(httpService, 'get').mockReturnValue(throwError(() => new Error('network fail')));
+    jest
+      .spyOn(httpService, 'get')
+      .mockReturnValue(throwError(() => new Error('network fail')));
 
-    await expect(service.getUserRepos('Bearer tok', defaultFilter))
-      .rejects.toMatchObject({ status: 502 });
+    await expect(
+      service.getUserRepos('Bearer tok', defaultFilter),
+    ).rejects.toMatchObject({ status: 502 });
   });
 });
