@@ -24,6 +24,12 @@ async function bootstrap() {
     }),
   );
 
+  app.enableCors({
+    origin: ['*'],
+    methods: 'GET',
+    credentials: true,
+});
+
   const config = new DocumentBuilder()
     .setTitle('PR Tracker BFF')
     .setVersion('1.0')
