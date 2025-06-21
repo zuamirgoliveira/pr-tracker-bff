@@ -21,7 +21,7 @@ jobs:
       - name: Run ESLint
         run: npm run lint
       - name: TypeScript type check
-        run: npm run build -- --noEmit
+        run: npm ci && npm run type-check
 
   test:
     name: Unit & E2E Tests
