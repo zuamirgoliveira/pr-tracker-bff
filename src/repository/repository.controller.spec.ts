@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { RepositoryController } from './repository.controller';
 import { RepositoryService } from './repository.service';
@@ -57,9 +58,15 @@ describe('RepositoryController', () => {
       jest.spyOn(service, 'getUserRepos').mockResolvedValue(fakeRepos);
 
       const defaultFilter = new RepoFilterDto();
-      const result = await controller.getUserRepos('Bearer faketoken', defaultFilter);
+      const result = await controller.getUserRepos(
+        'Bearer faketoken',
+        defaultFilter,
+      );
 
-      expect(service.getUserRepos).toHaveBeenCalledWith('Bearer faketoken', defaultFilter);
+      expect(service.getUserRepos).toHaveBeenCalledWith(
+        'Bearer faketoken',
+        defaultFilter,
+      );
       expect(result).toEqual(fakeRepos);
     });
 
@@ -74,9 +81,15 @@ describe('RepositoryController', () => {
         page: 2,
       };
 
-      const result = await controller.getUserRepos('Bearer faketoken', customFilter);
+      const result = await controller.getUserRepos(
+        'Bearer faketoken',
+        customFilter,
+      );
 
-      expect(service.getUserRepos).toHaveBeenCalledWith('Bearer faketoken', customFilter);
+      expect(service.getUserRepos).toHaveBeenCalledWith(
+        'Bearer faketoken',
+        customFilter,
+      );
       expect(result).toEqual(fakeRepos);
     });
 
@@ -90,7 +103,10 @@ describe('RepositoryController', () => {
     });
 
     it('should throw 502 BadGateway if service fails downstream', async () => {
-      const err = new HttpException('Erro ao buscar repositórios no backend', 502);
+      const err = new HttpException(
+        'Erro ao buscar repositórios no backend',
+        502,
+      );
       jest.spyOn(service, 'getUserRepos').mockRejectedValue(err);
 
       await expect(

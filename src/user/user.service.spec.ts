@@ -1,10 +1,10 @@
-// test/unit/user.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
 import { of, throwError } from 'rxjs';
 import { UserService } from '../../src/user/user.service';
 import { UserDto } from '../../src/user/dto/user.dto';
 import { HttpException } from '@nestjs/common';
+import { AxiosResponse } from 'axios';
 
 describe('UserService', () => {
   let service: UserService;
@@ -36,12 +36,18 @@ describe('UserService', () => {
       avatarUrl: 'http://avatar.url',
       email: 'teste@example.com',
     };
-    jest.spyOn(httpService, 'get').mockReturnValue(of({ data: dto } as any));
+    const axiosResp = { data: dto } as AxiosResponse<UserDto>;
+
+    jest.spyOn(httpService, 'get').mockReturnValue(of(axiosResp));
     await expect(service.getUser('Bearer token')).resolves.toEqual(dto);
   });
 
   it('should throw Bad Gateway on downstream error', async () => {
-    jest.spyOn(httpService, 'get').mockReturnValue(throwError(() => new Error('fail')));
-    await expect(service.getUser('Bearer token')).rejects.toThrow(HttpException);
+    jest
+      .spyOn(httpService, 'get')
+      .mockReturnValue(throwError(() => new Error('fail')));
+    await expect(service.getUser('Bearer token')).rejects.toThrow(
+      HttpException,
+    );
   });
 });

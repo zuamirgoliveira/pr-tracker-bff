@@ -1,4 +1,4 @@
-// src/user/user.controller.spec.ts
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
@@ -52,15 +52,21 @@ describe('UserController', () => {
       jest.spyOn(service, 'getUser').mockRejectedValue(err);
 
       await expect(controller.getUser('')).rejects.toThrow(HttpException);
-      await expect(controller.getUser('')).rejects.toMatchObject({ status: 400 });
+      await expect(controller.getUser('')).rejects.toMatchObject({
+        status: 400,
+      });
     });
 
     it('should throw BadGateway if service fails downstream', async () => {
       const err = new HttpException('Erro ao buscar usuário no backend', 502);
       jest.spyOn(service, 'getUser').mockRejectedValue(err);
 
-      await expect(controller.getUser('Bearer faketoken')).rejects.toThrow(HttpException);
-      await expect(controller.getUser('Bearer faketoken')).rejects.toMatchObject({ status: 502 });
+      await expect(controller.getUser('Bearer faketoken')).rejects.toThrow(
+        HttpException,
+      );
+      await expect(
+        controller.getUser('Bearer faketoken'),
+      ).rejects.toMatchObject({ status: 502 });
     });
   });
 });

@@ -4,7 +4,6 @@ import rateLimit from 'express-rate-limit';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -19,7 +18,8 @@ async function bootstrap() {
       message: {
         statusCode: 429,
         error: 'Too Many Requests',
-        message: 'Você excedeu o limite de requisições. Tente novamente mais tarde.',
+        message:
+          'Você excedeu o limite de requisições. Tente novamente mais tarde.',
       },
     }),
   );
@@ -28,7 +28,7 @@ async function bootstrap() {
     origin: ['*'],
     methods: 'GET',
     credentials: true,
-});
+  });
 
   const config = new DocumentBuilder()
     .setTitle('PR Tracker BFF')
@@ -40,4 +40,4 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT || 3000);
 }
-bootstrap();
+void bootstrap();

@@ -18,11 +18,8 @@ export class UserService {
       });
       const { data } = await lastValueFrom(resp$);
       return data;
-    } catch (err) {
-      throw new HttpException(
-        'Erro ao buscar usuário no backend',
-        502,
-      );
+    } catch {
+      throw new HttpException('Erro ao buscar usuário no backend', 502);
     }
   }
 }

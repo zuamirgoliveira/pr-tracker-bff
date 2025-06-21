@@ -8,7 +8,10 @@ import { RepoFilterDto } from './dto/repo-filter.dto';
 export class RepositoryService {
   constructor(private readonly http: HttpService) {}
 
-  async getUserRepos(authHeader: string, filter: RepoFilterDto): Promise<RepoDto[]> {
+  async getUserRepos(
+    authHeader: string,
+    filter: RepoFilterDto,
+  ): Promise<RepoDto[]> {
     if (!authHeader) {
       throw new HttpException('Authorization header não informado', 400);
     }
@@ -17,20 +20,17 @@ export class RepositoryService {
       const resp$ = this.http.get<RepoDto[]>('/api/v1/user/repos', {
         headers: { Authorization: authHeader },
         params: {
-            type: filter.type,
-            sort: filter.sort,
-            direction: filter.direction,
-            perPage: filter.perPage,
-            page: filter.page,
+          type: filter.type,
+          sort: filter.sort,
+          direction: filter.direction,
+          perPage: filter.perPage,
+          page: filter.page,
         },
       });
       const { data } = await lastValueFrom(resp$);
       return data;
-    } catch (err) {
-      throw new HttpException(
-        'Erro ao buscar repositórios no backend',
-        502,
-      );
+    } catch {
+      throw new HttpException('Erro ao buscar repositórios no backend', 502);
     }
   }
 }

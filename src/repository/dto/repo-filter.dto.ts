@@ -11,12 +11,12 @@ export enum RepoType {
 export enum SortField {
   CREATED = 'created',
   UPDATED = 'updated',
-  PUSHED  = 'pushed',
+  PUSHED = 'pushed',
   FULL_NAME = 'full_name',
 }
 
 export enum Direction {
-  ASC  = 'asc',
+  ASC = 'asc',
   DESC = 'desc',
 }
 
