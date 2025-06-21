@@ -56,9 +56,3 @@ jobs:
         run: npm ci
       - name: Run coverage
         run: npm run test:cov
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage/lcov.info
-          fail_ci_if_error: true
