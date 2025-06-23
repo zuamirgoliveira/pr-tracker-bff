@@ -4,7 +4,6 @@ import { HttpService } from '@nestjs/axios';
 import { of, throwError } from 'rxjs';
 import { PullRequestDto } from './dto/pull-request.dto';
 import { PullRequestFilterDto, State, Direction} from './dto/pull-request-filter.dto';
-import { HttpException } from '@nestjs/common';
 import { AxiosResponse } from 'axios';
 
 describe('PullRequestService', () => {
