@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { PullRequestService } from './pull-request.service';
 import { HttpService } from '@nestjs/axios';
