@@ -6,6 +6,7 @@ import * as request from 'supertest';
 import { Server } from 'http';
 import { AppModule } from './../src/app.module';
 import { RepoDto } from '../src/repository/dto/repo.dto';
+import { PullRequestDto } from '../src/pullrequest/dto/pull-request.dto';
 
 describe('E2E: User & Repos Controllers', () => {
   let app: INestApplication;
@@ -46,6 +47,28 @@ describe('E2E: User & Repos Controllers', () => {
     updatedAt: r.updatedAt.toISOString(),
   }));
 
+  const fakePulls: PullRequestDto[] = [
+    {
+      title: 'Add new feature',
+      htmlUrl: 'https://github.com/testuser/repo-one/pull/1',
+      state: 'open',
+      createdAt: new Date('2025-03-01T10:00:00Z'),
+      user: { login: 'contrib1', avatarUrl: 'http://example.com/avatar1.png' },
+    },
+    {
+      title: 'Fix bug',
+      htmlUrl: 'https://github.com/testuser/repo-one/pull/2',
+      state: 'closed',
+      createdAt: new Date('2025-03-02T11:30:00Z'),
+      user: { login: 'contrib2', avatarUrl: 'http://example.com/avatar2.png' },
+    },
+  ];
+
+  const fakePullsResponse = fakePulls.map((p) => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+  }));
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -59,7 +82,9 @@ describe('E2E: User & Repos Controllers', () => {
           if (url === '/api/v1/user/repos') {
             return of({ data: fakeRepos });
           }
-          // fallback if needed
+          if (url.startsWith('/api/v1/repos/') && url.endsWith('/pulls')) {
+            return of({ data: fakePullsResponse });
+          }
           return of({ data: null });
         }),
       })
@@ -94,6 +119,20 @@ describe('E2E: User & Repos Controllers', () => {
   it('GET /user/repos sem Authorization → 400', () => {
     return request(app.getHttpServer() as unknown as Server)
       .get('/user/repos')
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+   it('GET /repos/:owner/:repo/pulls → 200 e lista de pull requests', () => {
+    return request(app.getHttpServer() as unknown as Server)
+      .get('/repos/testuser/repo-one/pulls')
+      .set('Authorization', 'Bearer faketoken')
+      .expect(HttpStatus.OK)
+      .expect(fakePullsResponse);
+  });
+
+  it('GET /repos/:owner/:repo/pulls sem Authorization → 400', () => {
+    return request(app.getHttpServer() as unknown as Server)
+      .get('/repos/testuser/repo-one/pulls')
       .expect(HttpStatus.BAD_REQUEST);
   });
 
