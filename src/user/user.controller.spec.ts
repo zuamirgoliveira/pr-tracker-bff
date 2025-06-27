@@ -1,19 +1,20 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
-import { UserService } from './user.service';
-import { UserDto } from './dto/user.dto';
-import { HttpException } from '@nestjs/common';
+import { UserService }    from './user.service';
+import { UserDto }        from './dto/user.dto';
+import { HttpException }  from '@nestjs/common';
+import { Request }        from 'express';
 
 describe('UserController', () => {
   let controller: UserController;
   let service: UserService;
 
   const fakeUser: UserDto = {
-    login: 'testuser',
-    name: 'Test User',
-    avatarUrl: 'http://example.com/avatar.png',
-    email: 'testuser@example.com',
+    login: 'jdoe',
+    name: 'John Doe',
+    avatarUrl: 'http://avatar',
+    email: 'jdoe@example.com',
   };
 
   beforeEach(async () => {
@@ -23,50 +24,44 @@ describe('UserController', () => {
         {
           provide: UserService,
           useValue: {
-            getUser: jest.fn(),
+            getUser: jest.fn().mockResolvedValue(fakeUser),
           },
         },
       ],
     }).compile();
 
-    controller = module.get<UserController>(UserController);
-    service = module.get<UserService>(UserService);
+    controller = module.get(UserController);
+    service    = module.get(UserService);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('getUser', () => {
-    it('should return user data when service resolves', async () => {
-      jest.spyOn(service, 'getUser').mockResolvedValue(fakeUser);
+  it('uses the Authorization header when present', async () => {
+    const req = { cookies: { } } as unknown as Request;
+    const result = await controller.getUser('Bearer token123', req as any);
+    expect(service.getUser).toHaveBeenCalledWith('Bearer token123');
+    expect(result).toEqual(fakeUser);
+  });
 
-      const result = await controller.getUser('Bearer faketoken');
-      expect(service.getUser).toHaveBeenCalledWith('Bearer faketoken');
-      expect(result).toEqual(fakeUser);
-    });
+  it('falls back to GH_TOKEN cookie when header is absent', async () => {
+    const req = { cookies: { GH_TOKEN: 'ck-xyz' } } as unknown as Request;
+    const result = await controller.getUser('', req as any);
+    expect(service.getUser).toHaveBeenCalledWith('Bearer ck-xyz');
+    expect(result).toEqual(fakeUser);
+  });
 
-    it('should throw BadRequest if Authorization header is missing', async () => {
-      // mock para simular throw no service
-      const err = new HttpException('Authorization header não informado', 400);
-      jest.spyOn(service, 'getUser').mockRejectedValue(err);
+  it('throws 400 if neither header nor cookie present', async () => {
+    const req = { cookies: { } } as unknown as Request;
+    await expect(controller.getUser('', req as any)).rejects.toThrow(HttpException);
+    await expect(controller.getUser('', req as any))
+      .rejects.toMatchObject({ status: 400, message: 'Não autenticado (nenhum token encontrado)' });
+  });
 
-      await expect(controller.getUser('')).rejects.toThrow(HttpException);
-      await expect(controller.getUser('')).rejects.toMatchObject({
-        status: 400,
-      });
-    });
-
-    it('should throw BadGateway if service fails downstream', async () => {
-      const err = new HttpException('Erro ao buscar usuário no backend', 502);
-      jest.spyOn(service, 'getUser').mockRejectedValue(err);
-
-      await expect(controller.getUser('Bearer faketoken')).rejects.toThrow(
-        HttpException,
-      );
-      await expect(
-        controller.getUser('Bearer faketoken'),
-      ).rejects.toMatchObject({ status: 502 });
-    });
+  it('propagates service errors as-is', async () => {
+    jest.spyOn(service, 'getUser').mockRejectedValue(new HttpException('Backend error', 502));
+    const req = { cookies: { GH_TOKEN: 'ck-xyz' } } as unknown as Request;
+    await expect(controller.getUser('', req as any)).rejects.toMatchObject({ status: 502, message: 'Backend error' });
   });
 });

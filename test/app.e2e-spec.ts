@@ -94,7 +94,7 @@ describe('E2E: User & Repos Controllers', () => {
     await app.init();
   });
 
-  it('GET /user → 200 e payload do usuário', () => {
+  it('GET /user with Authorization header → 200 + user payload', () => {
     return request(app.getHttpServer() as unknown as Server)
       .get('/user')
       .set('Authorization', 'Bearer faketoken')
@@ -102,7 +102,15 @@ describe('E2E: User & Repos Controllers', () => {
       .expect(fakeUser);
   });
 
-  it('GET /user sem Authorization → 400', () => {
+  it('GET /user with GH_TOKEN cookie → 200 + user payload', () => {
+    return request(app.getHttpServer() as unknown as Server)
+      .get('/user')
+      .set('Cookie', 'GH_TOKEN=faketoken')
+      .expect(HttpStatus.OK)
+      .expect(fakeUser);
+  });
+
+  it('GET /user without header or cookie → 400 Bad Request', () => {
     return request(app.getHttpServer() as unknown as Server)
       .get('/user')
       .expect(HttpStatus.BAD_REQUEST);
@@ -136,7 +144,43 @@ describe('E2E: User & Repos Controllers', () => {
       .expect(HttpStatus.BAD_REQUEST);
   });
 
+
+
   afterAll(async () => {
     await app.close();
   });
+});
+
+describe('E2E: Auth Controller', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const mod = await Test.createTestingModule({
+      imports: [AppModule],
+    })
+    .overrideProvider(HttpService)
+    .useValue({
+      post: jest.fn().mockReturnValue(of({ data: { access_token: 'xyz' } })),
+    })
+    .compile();
+
+    app = mod.createNestApplication();
+    await app.init();
+  });
+
+  it('GET /auth/github redireciona (302)', () => {
+    return request(app.getHttpServer())
+      .get('/auth/github')
+      .expect(HttpStatus.FOUND);
+  });
+
+  it('GET /auth/github/callback?code=abc seta cookie e redireciona', () => {
+    return request(app.getHttpServer())
+      .get('/auth/github/callback')
+      .query({ code: 'abc' })
+      .expect('Set-Cookie', /GH_TOKEN=xyz/)
+      .expect(HttpStatus.FOUND);
+  });
+  
+  afterAll(() => app.close());
 });
